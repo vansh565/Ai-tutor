@@ -1,13 +1,8 @@
 services:
-build:
-  environment:
-    pythonVersion: 3.11
-
   - type: web
-    name: ai-lecture-assistant
+    name: ai-tutor
     env: python
+    plan: free
+    pythonVersion: 3.11.9  # Specify Python 3.11
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
-    envVars:
-      - key: GOOGLE_APPLICATION_CREDENTIALS
-        value: path_to_your_google_credentials.json
