@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Smart AI-Powered Personalized Lecture Assistant">
+    <title>Smart AI Lecture Assistant</title>
+    <style>
+        * {margin: 0; padding: 0; box-sizing: border-box;}
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            min-height: 100vh;
+        }
+        .header {
+            background: #1a73e8;
+            color: white;
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo { font-size: 1.5rem; font-weight: bold;}
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #34c759;
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #1a73e8;
+        }
+        .voice-recorder { grid-column: 1 / -1; text-align: center;}
+        .record-button {
+            width: 100px;
+            height: 100px;
+            border: none;
+            border-radius: 50%;
+            background: #ff4444;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+        .record-button.recording { background: #34c759;}
+        .mic-icon { width: 40px; height: 40px;}
+        .voice-status { font-size: 1rem; margin-bottom: 1rem; color: #555;}
+        .transcript-display {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 1rem;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .lecture-content, .chatbot-container {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        .lecture-item, .doubt-item, .chat-message {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #fff;
+            border-left: 3px solid #1a73e8;
+            border-radius: 4px;
+        }
+        .summary-content, .gemini-notes-content, .weak-areas-content {
+            padding: 0.5rem;
+            line-height: 1.6;
+            color: #333;
+        }
+        .chat-user {
+            background: #e6f0ff;
+            border-left: 3px solid #1a73e8;
+            text-align: right;
+        }
+        .chat-ai {
+            background: #f0f4ff;
+            border-left: 3px solid #34c759;
+        }
+        .chat-input {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .chat-input-field {
+            flex-grow: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 0.9rem;
+        }
+        .btn-primary { background: #1a73e8; color: white;}
+        .btn-secondary { background: #f1f3f4; color: #333;}
+        .btn-download { background: #34c759; color: white;}
+        .btn:disabled { background: #ccc; cursor: not-allowed;}
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 1rem;
+            background: #34c759;
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transform: translateX(300px);
+            transition: transform 0.3s;
+            z-index: 200;
+        }
+        .notification.show { transform: translateX(0);}
+        .notification.error { background: #ff4444;}
+        .notification.info { background: #1a73e8;}
+        ul { list-style-type: disc; padding-left: 1.5rem;}
+        li { margin-bottom: 0.25rem;}
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background: #181a1b;
+            color: #e0e0e0;
+        }
+        body.dark-mode .header {
+            background: #222;
+        }
+        body.dark-mode .card {
+            background: #242526;
+            box-shadow: none;
+            color: #ddd;
+        }
+        body.dark-mode .lecture-content,
+        body.dark-mode .chatbot-container,
+        body.dark-mode .summary-content,
+        body.dark-mode .gemini-notes-content,
+        body.dark-mode .weak-areas-content,
+        body.dark-mode #transcriptDisplay,
+        body.dark-mode #consoleOutput {
+            background: #191b1c;
+            border-color: #444;
+            color: #ccc;
+        }
+        body.dark-mode .lecture-item,
+        body.dark-mode .doubt-item,
+        body.dark-mode .chat-message {
+            background: #2e2e2e;
+            color: #e4e4e4;
+        }
+        body.dark-mode .status-dot { background: #34c759;}
+        body.dark-mode .card-title { color: #47a9ff;}
+        body.dark-mode .btn-primary { background: #3a80f2;}
+        body.dark-mode .btn-secondary { background: #555; color: #eee;}
+        body.dark-mode .btn-download { background: #3ec96d;}
+        body.dark-mode .record-button { background: #4a4a4a;}
+        body.dark-mode .record-button.recording { background: #34c759;}
+        body.dark-mode pre#consoleLog { color: #ffefb0;}
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 0.5rem;
+            }
+            .record-button {
+                width: 80px;
+                height: 80px;
+            }
+            .mic-icon { width: 30px; height: 30px;}
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">Smart AI Lecture Assistant</div>
+            <div style="display:flex;align-items:center;">
+                <div class="status-indicator" id="statusIndicator" style="margin-right:12px;">
+                    <div class="status-dot"></div>
+                    AI Ready
+                </div>
+                <button id="darkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode" style="margin-left:10px;padding:6px 16px;border-radius:5px;border:none;cursor:pointer;background:#323c46;color:#eaeaea;">Dark Mode</button>
+            </div>
+        </div>
+    </header>
+    <div class="card" style="max-height: 150px; overflow-y: auto; margin: 1rem auto; width: 98%;" id="consoleOutput">
+        <h2 class="card-title">Console Output</h2>
+        <pre id="consoleLog" style="white-space: pre-wrap; font-family: monospace; font-size: 0.85rem;"></pre>
+    </div>
+    <div class="container">
+        <div class="card voice-recorder">
+            <h2 class="card-title">Voice Input</h2>
+            <button class="record-button" id="recordBtn" type="button" aria-label="Start recording">
+                <svg class="mic-icon" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <path d="M12 19v4"/>
+                    <path d="M8 23h8"/>
+                </svg>
+            </button>
+            <div class="voice-status" id="voiceStatus">Click to start recording</div>
+            <div class="transcript-display" id="transcriptDisplay" role="log" aria-live="polite">
+                Your speech will appear here...
+            </div>
+            <div class="controls">
+                <button class="btn btn-secondary" id="clearTranscript" type="button">Clear</button>
+                <button class="btn btn-primary" id="processLecture" type="button">Process</button>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">Lecture Content</h2>
+            <div class="lecture-content" id="lectureContent" role="log" aria-live="polite">
+                <div class="lecture-item">Start recording to capture lecture content.</div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-secondary" id="exportNotes" type="button">Export Notes</button>
+                <button class="btn btn-download" id="downloadTranscript" type="button" disabled>Download</button>
+                <button class="btn btn-download" id="downloadConsolidated" type="button" disabled>Download All</button>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">Summary & Notes</h2>
+            <div class="summary-content" id="summaryContent" role="log" aria-live="polite">
+                <div>Summary will appear here after processing.</div>
+            </div>
+            <div class="gemini-notes-content" id="geminiNotesContent" role="log" aria-live="polite">
+                <div>Gemini notes will appear here.</div>
+            </div>
+            <div class="weak-areas-content" id="weakAreasContent" role="log" aria-live="polite">
+                <div>Weak areas will appear here.</div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-primary" id="regenerateSummary" type="button">Regenerate</button>
+                <button class="btn btn-download" id="downloadSummary" type="button" disabled>Download</button>
+                <button class="btn btn-download" id="downloadGeminiNotes" type="button" disabled>Download</button>
+                <button class="btn btn-download" id="downloadWeakAreas" type="button" disabled>Download</button>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">Doubts</h2>
+            <div id="doubtsContainer" role="log" aria-live="polite">
+                <div class="doubt-item">Doubts will appear here after processing.</div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-primary" id="generateMoreDoubts" type="button">More Doubts</button>
+                <button class="btn btn-download" id="downloadDoubts" type="button" disabled>Download</button>
+            </div>
+        </div>
+        <div class="card">
+            <h2 class="card-title">AI Chat</h2>
+            <div class="chatbot-container" id="chatbotContainer" role="log" aria-live="polite">
+                <div class="chat-message chat-ai">Ask a question or enter a keyword!</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" class="chat-input-field" id="chatInput" placeholder="Ask a question..." aria-label="Ask a question">
+                <button class="btn btn-primary" id="sendQuery" type="button">Send</button>
+            </div>
+            <div class="chat-input">
+                <input type="text" class="chat-input-field" id="keywordInput" placeholder="Enter keyword..." aria-label="Enter keyword">
+                <button class="btn btn-primary" id="sendKeyword" type="button">Search</button>
+            </div>
+        </div>
+    </div>
+    <div class="notification" id="notification" role="alert" aria-live="assertive"></div>
+
+    <script>
+        // -------- Console Output Redirection ------------------
+        (function() {
+            const consoleLogElement = document.getElementById('consoleLog');
+            if (!consoleLogElement) return;
+            ['log','info','warn','error'].forEach(level=>{
+                const orig = console[level].bind(console);
+                console[level]=function(...args){
+                    orig(...args);
+                    const text = args.map(a=>{
+                        if(typeof a==='object'){try{return JSON.stringify(a,null,2);}catch{return String(a);}}
+                        return String(a);
+                    }).join(' ');
+                    const p=document.createElement('div');
+                    p.textContent = `[${level.toUpperCase()}] ${text}`;
+                    if(level==='error')p.style.color='#ff4d4d';
+                    else if(level==='warn')p.style.color='#ffa500';
+                    else if(level==='info')p.style.color='#4da6ff';
+                    else p.style.color='#b0ffff';
+                    consoleLogElement.appendChild(p);
+                    const parent=consoleLogElement.parentElement;
+                    if(parent)parent.scrollTop=parent.scrollHeight;
+                };
+            });
+        })();
+
+        // -------- Dark Mode ------------------
+        function setDarkMode(mode) {
+            if (mode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeToggle').textContent = 'Light Mode';
+                localStorage.setItem('darkMode', '1');
+            } else {
+                document.body.classList.remove('dark-mode');
+                document.getElementById('darkModeToggle').textContent = 'Dark Mode';
+                localStorage.setItem('darkMode', '0');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('darkModeToggle').addEventListener('click', () => {
+                setDarkMode(!document.body.classList.contains('dark-mode'));
+            });
+            setDarkMode(localStorage.getItem('darkMode')==='1');
+        });
+
+        // --------- App Logic ---------------
+        let isRecording = false;
+        let websocket = null;
+        let lectureContent = [];
+        let currentTranscript = '';
+        let recognition = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        let wordCount = 0;
+        const studentId = 'student_123';
+        let fileNames = {
+            transcript: null,
+            summary: null,
+            doubts: null,
+            weak_areas: null,
+            gemini_notes: null,
+            consolidated: null
+        };
+        let isRecognitionRunning = false;
+
+        function initializeWebSocket() {
+            console.log('Connecting to WebSocket');
+            websocket = new WebSocket('ws://localhost:8767/' + studentId);
+
+            websocket.onopen = () => {
+                console.log('WebSocket connected');
+                reconnectAttempts = 0;
+                showNotification('Connected to server!', 'success');
+                document.getElementById('statusIndicator').innerHTML = '<div class="status-dot"></div> AI Connected';
+                setInterval(() => {
+                    if (websocket.readyState === WebSocket.OPEN) {
+                        websocket.send(JSON.stringify({ action: 'heartbeat' }));
+                    }
+                }, 30000);
+                loadSavedContent();
+            };
+
+            websocket.onmessage = (event) => {
+                console.log('Received:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.status === 'chunk') {
+                        showNotification(`Received chunk ${data.chunk_number}`, 'info');
+                        currentTranscript += ' ' + data.chunk;
+                        wordCount += data.chunk.split(/\s+/).filter(w => w).length;
+                        updateTranscriptDisplay(currentTranscript);
+                        addToLectureContent(data.chunk, data.chunk_number);
+                        saveContentToStorage();
+                    } else if (data.status === 'processed') {
+                        showNotification('Notes processed!', 'success');
+                        fileNames = {
+                            transcript: data.transcript_filename,
+                            summary: data.summary_filename,
+                            doubts: data.doubts_filename,
+                            weak_areas: data.weak_areas_filename,
+                            gemini_notes: data.gemini_notes_filename,
+                            consolidated: data.consolidated_filename
+                        };
+                        updateDownloadButtons();
+                        updateSummary(data.notes.summary);
+                        updateGeminiNotes(data.gemini_notes);
+                        updateDoubts(data.notes.doubts);
+                        updateWeakAreas(data.weak_areas);
+                        saveContentToStorage();
+                    } else if (data.status === 'query_response') {
+                        showNotification('Query answered!', 'success');
+                        addChatMessage(data.query, data.response);
+                        saveChatToStorage();
+                    } else if (data.status === 'stopped') {
+                        stopRecording();
+                        showNotification('Recording stopped!', 'success');
+                    } else if (data.status === 'error') {
+                        showNotification(`Error: ${data.message}`, 'error');
+                    } else if (data.status === 'heartbeat') {
+                        console.debug('Heartbeat received');
+                    }
+                } catch (error) {
+                    console.error('Error parsing message:', error);
+                    showNotification('Error parsing server response', 'error');
+                }
+            };
+
+            websocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                showNotification('Connection failed', 'error');
+            };
+
+            websocket.onclose = () => {
+                console.log('WebSocket disconnected');
+                showNotification('Connection lost', 'error');
+                document.getElementById('statusIndicator').innerHTML = '<div class="status-dot"></div> AI Disconnected';
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    console.log(`Reconnecting attempt ${reconnectAttempts}`);
+                    setTimeout(initializeWebSocket, 2000);
+                } else {
+                    showNotification('Max retries reached', 'error');
+                }
+            };
+        }
+
+        function saveContentToStorage() {
+            const content = {
+                transcript: currentTranscript,
+                lectureContent: lectureContent,
+                summary: document.getElementById('summaryContent').innerHTML,
+                geminiNotes: document.getElementById('geminiNotesContent').innerHTML,
+                doubts: document.getElementById('doubtsContainer').innerHTML,
+                weakAreas: document.getElementById('weakAreasContent').innerHTML,
+                fileNames: fileNames
+            };
+            localStorage.setItem('lectureAssistantContent', JSON.stringify(content));
+        }
+        function saveChatToStorage() {
+            localStorage.setItem('lectureAssistantChat', document.getElementById('chatbotContainer').innerHTML);
+        }
+        function loadSavedContent() {
+            const saved = localStorage.getItem('lectureAssistantContent');
+            if (saved) {
+                const content = JSON.parse(saved);
+                currentTranscript = content.transcript || '';
+                lectureContent = content.lectureContent || [];
+                fileNames = content.fileNames || {};
+                updateTranscriptDisplay(currentTranscript);
+                document.getElementById('lectureContent').innerHTML = lectureContent.length > 0
+                    ? lectureContent.map(item => `<div class="lecture-item">${item.chunk}</div>`).join('')
+                    : '<div class="lecture-item">Start recording to capture content.</div>';
+                document.getElementById('summaryContent').innerHTML = content.summary || '<div>Summary will appear here.</div>';
+                document.getElementById('geminiNotesContent').innerHTML = content.geminiNotes || '<div>Gemini notes will appear here.</div>';
+                document.getElementById('doubtsContainer').innerHTML = content.doubts || '<div class="doubt-item">Doubts will appear here.</div>';
+                document.getElementById('weakAreasContent').innerHTML = content.weakAreas || '<div>Weak areas will appear here.</div>';
+                updateDownloadButtons();
+            }
+            const savedChat = localStorage.getItem('lectureAssistantChat');
+            if (savedChat) {
+                document.getElementById('chatbotContainer').innerHTML = savedChat;
+            }
+        }
+
+        function initializeSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                recognition.onstart = () => {
+                    isRecognitionRunning = true;
+                    console.log('Speech recognition started');
+                    showNotification('Listening...', 'success');
+                    updateVoiceStatus('Listening...');
+                };
+                recognition.onresult = (event) => {
+                    let finalTranscript = '', interimTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript.trim();
+                        if (event.results[i].isFinal) finalTranscript += transcript + ' ';
+                        else interimTranscript += transcript + ' ';
+                    }
+                    updateTranscriptDisplay(currentTranscript + interimTranscript);
+                    if (finalTranscript && websocket && websocket.readyState === WebSocket.OPEN) {
+                        console.log('Sending transcript:', finalTranscript);
+                        websocket.send(JSON.stringify({
+                            action: 'start_lecture',
+                            transcript: finalTranscript
+                        }));
+                        currentTranscript += finalTranscript;
+                        wordCount += finalTranscript.split(/\s+/).filter(w => w).length;
+                        saveContentToStorage();
+                    }
+                };
+                recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                    isRecognitionRunning = false;
+                    showNotification(`Speech error: ${event.error}`, 'error');
+                    if (isRecording && event.error !== 'aborted') {
+                        setTimeout(() => {
+                            if (isRecording && !isRecognitionRunning) {
+                                try { recognition.start(); } catch (e){ console.error('Failed to restart recognition:', e);}
+                            }
+                        }, 200);
+                    }
+                };
+                recognition.onend = () => {
+                    isRecognitionRunning = false;
+                    if (isRecording) {
+                        setTimeout(() => {
+                            if (isRecording && !isRecognitionRunning) {
+                                try { recognition.start(); } catch (e) { console.error('Failed to restart recognition:', e);}
+                            }
+                        }, 200);
+                    }
+                };
+            } else { showNotification('Speech recognition not supported', 'error'); }
+        }
+        function toggleRecording(event) {
+            event.preventDefault();
+            const recordBtn = document.getElementById('recordBtn');
+            if (!recordBtn) return showNotification('UI error: Record button missing', 'error');
+            if (!isRecording) {
+                console.log('Starting recording');
+                startRecording();
+                recordBtn.classList.add('recording');
+                recordBtn.setAttribute('aria-label', 'Stop recording');
+                updateVoiceStatus('Recording... Click to stop');
+            } else {
+                console.log('Stopping recording');
+                stopRecording();
+                recordBtn.classList.remove('recording');
+                recordBtn.setAttribute('aria-label', 'Start recording');
+                updateVoiceStatus('Recording stopped');
+                if (websocket && websocket.readyState === WebSocket.OPEN) {
+                    websocket.send(JSON.stringify({
+                        action: 'start_lecture',
+                        transcript: 'stop listening'
+                    }));
+                }
+            }
+        }
+        function startRecording() {
+            if (!recognition) initializeSpeechRecognition();
+            if (recognition && !isRecording) {
+                isRecording = true;
+                try { recognition.start(); }
+                catch (e) {
+                    console.error('Error starting recognition:', e);
+                    showNotification('Failed to start recording', 'error');
+                }
+            }
+        }
+        function stopRecording() {
+            if (isRecording && recognition) {
+                isRecording = false;
+                try { recognition.stop(); }
+                catch (error) { console.error('Recording error:', error);}
+                showNotification('Recording stopped!', 'info');
+            }
+        }
+        function updateVoiceStatus(status) {
+            const voiceStatus = document.getElementById('voiceStatus');
+            if (status) voiceStatus.textContent = status;
+            else showNotification('UI error: Voice status missing', 'error');
+        }
+        function updateTranscriptDisplay(text) {
+            const display = document.getElementById('transcriptDisplay');
+            if (display) display.textContent = text.trim() || 'Your speech will appear here...';
+            else showNotification('UI error: Transcript display missing', 'error');
+        }
+        function addToLectureContent(content, chunkNumber) {
+            lectureContent.push({
+                chunk: content,
+                chunkNumber: chunkNumber,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            const container = document.getElementById('lectureContent');
+            if (container) {
+                const item = document.createElement('div');
+                item.className = 'lecture-item';
+                item.textContent = `${chunkNumber}. ${content.trim()} (${new Date().toLocaleTimeString()})`;
+                container.appendChild(item);
+                container.scrollTop = container.scrollHeight;
+                saveContentToStorage();
+            } else showNotification('UI error: Lecture content missing', 'error');
+        }
+        function updateSummary(summary) {
+            const container = document.getElementById('summaryContent');
+            if (container) {
+                if (summary && summary.trim()) {
+                    const lines = summary.split('\n').filter(line => line.trim());
+                    container.innerHTML = lines.length > 0 ?
+                        `<ul>${lines.map(line => `<li>${line.trim()}</li>`).join('')}</ul>` :
+                        '<div>No summary available</div>';
+                } else container.innerHTML = '<div>No summary available</div>';
+                saveContentToStorage();
+            } else showNotification('UI error: Summary container missing', 'error');
+        }
+        function updateGeminiNotes(geminiNotes) {
+            const container = document.getElementById('geminiNotesContent');
+            if (container) {
+                if (geminiNotes && geminiNotes.trim()) {
+                    const lines = geminiNotes.split('\n').filter(line => line.trim());
+                    container.innerHTML = lines.length > 0 ?
+                        `<ul>${lines.map(line => `<li>${line.trim()}</li>`).join('')}</ul>` :
+                        '<div>No Gemini notes available</div>';
+                } else container.innerHTML = '<div>No Gemini notes available</div>';
+                saveContentToStorage();
+            } else showNotification('UI error: Notes container missing', 'error');
+        }
+        function updateDoubts(doubts) {
+            const container = document.getElementById('doubtsContainer');
+            if (container) {
+                if (doubts && doubts.trim()) {
+                    const doubtList = doubts.split('\n').filter(d => d.trim());
+                    container.innerHTML = doubtList.length > 0 ?
+                        doubtList.map((doubt, index) => `<div class="doubt-item">${index+1}. ${doubt.trim()}</div>`).join('') :
+                        '<div class="doubt-item">No doubts generated</div>';
+                } else container.innerHTML = '<div class="doubt-item">No doubts generated</div>';
+                saveContentToStorage();
+            } else showNotification('UI error: Doubts container missing', 'error');
+        }
+        function updateWeakAreas(weakAreas) {
+            const container = document.getElementById('weakAreasContent');
+            if (container) {
+                if (weakAreas && weakAreas.trim()) {
+                    const lines = weakAreas.split('\n').filter(line => line.trim());
+                    container.innerHTML = lines.length > 0 ?
+                        `<ul>${lines.map(line => `<li>${line.trim()}</li>`).join('')}</ul>` :
+                        '<div>No weak areas identified</div>';
+                } else container.innerHTML = '<div>No weak areas identified</div>';
+                saveContentToStorage();
+            } else showNotification('UI error: Weak areas container missing', 'error');
+        }
+        function addChatMessage(query, response) {
+            const container = document.getElementById('chatbotContainer');
+            if (container) {
+                const userMessage = document.createElement('div');
+                userMessage.className = 'chat-message chat-user';
+                userMessage.textContent = query;
+                container.appendChild(userMessage);
+
+                const aiMessage = document.createElement('div');
+                aiMessage.className = 'chat-message chat-ai';
+                aiMessage.textContent = response;
+                container.appendChild(aiMessage);
+
+                container.scrollTop = container.scrollHeight;
+                saveChatToStorage();
+            } else showNotification('UI error: Chat container missing', 'error');
+        }
+        function updateDownloadButtons() {
+            const buttons = {
+                downloadTranscript: fileNames.transcript,
+                downloadSummary: fileNames.summary,
+                downloadDoubts: fileNames.doubts,
+                downloadWeakAreas: fileNames.weak_areas,
+                downloadGeminiNotes: fileNames.gemini_notes,
+                downloadConsolidated: fileNames.consolidated
+            };
+            Object.keys(buttons).forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    if (buttons[buttonId]) {
+                        button.disabled = false;
+                        button.onclick = (event) => {
+                            event.preventDefault();
+                            downloadFile(buttons[buttonId]);
+                        };
+                    } else button.disabled = true;
+                }
+            });
+        }
+        function downloadFile(filename) {
+            if (filename) {
+                console.log(`Downloading ${filename}`);
+                showNotification(`Downloading ${filename}...`, 'info');
+                const url = `/download/${studentId}/${encodeURIComponent(filename)}`;
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else showNotification('No file available', 'error');
+        }
+        function clearTranscript(event) {
+            event.preventDefault();
+            currentTranscript = '';
+            lectureContent = [];
+            wordCount = 0;
+            fileNames = {
+                transcript: null,
+                summary: null,
+                doubts: null,
+                weak_areas: null,
+                gemini_notes: null,
+                consolidated: null
+            };
+            updateDownloadButtons();
+            updateTranscriptDisplay('');
+            document.getElementById('lectureContent').innerHTML = '<div class="lecture-item">Start recording...</div>';
+            document.getElementById('summaryContent').innerHTML = '<div>Summary will appear here.</div>';
+            document.getElementById('geminiNotesContent').innerHTML = '<div>Gemini notes will appear here.</div>';
+            document.getElementById('doubtsContainer').innerHTML = '<div class="doubt-item">Doubts will appear here.</div>';
+            document.getElementById('weakAreasContent').innerHTML = '<div>Weak areas will appear here.</div>';
+            localStorage.removeItem('lectureAssistantContent');
+            showNotification('Content cleared!', 'success');
+        }
+        function processLecture(event) {
+            event.preventDefault();
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                console.log('Processing lecture');
+                showNotification('Processing lecture...', 'info');
+                websocket.send(JSON.stringify({ action: 'process_lecture' }));
+            } else showNotification('Not connected to server', 'error');
+        }
+        function exportNotes(event) {
+            event.preventDefault();
+            console.log('Exporting notes');
+            const notes = lectureContent.map(item =>
+                `${item.chunkNumber}. ${item.chunk} (${item.timestamp})`
+            ).join('\n');
+            const blob = new Blob([notes], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lecture_notes.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            showNotification('Notes exported!', 'success');
+        }
+        function sendQuery(event) {
+            event.preventDefault();
+            const chatInput = document.getElementById('chatInput');
+            if (!chatInput) return showNotification('UI error: Chat input missing', 'error');
+            const query = chatInput.value.trim();
+            if (query && websocket && websocket.readyState === WebSocket.OPEN) {
+                console.log('Sending query:', query);
+                showNotification(`Sending query: "${query}"`, 'info');
+                websocket.send(JSON.stringify({ action: 'voice_query', query }));
+                chatInput.value = '';
+            } else showNotification('Not connected or invalid query', 'error');
+        }
+        function sendKeywordQuery(event) {
+            event.preventDefault();
+            const keywordInput = document.getElementById('keywordInput');
+            if (!keywordInput) return showNotification('UI error: Keyword input missing', 'error');
+            const query = keywordInput.value.trim();
+            if (query && websocket && websocket.readyState === WebSocket.OPEN) {
+                console.log('Sending keyword:', query);
+                showNotification(`Sending query: "${query}"`, 'info');
+                websocket.send(JSON.stringify({ action: 'keyword_query', query }));
+                keywordInput.value = '';
+            } else showNotification('Not connected or invalid keyword', 'error');
+        }
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            if (notification) {
+                notification.textContent = message;
+                notification.className = `notification show ${type}`;
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeWebSocket();
+            const buttons = {
+                recordBtn: toggleRecording,
+                clearTranscript: clearTranscript,
+                processLecture: processLecture,
+                exportNotes: exportNotes,
+                regenerateSummary: processLecture,
+                generateMoreDoubts: processLecture,
+                sendQuery: sendQuery,
+                sendKeyword: sendKeywordQuery
+            };
+            Object.keys(buttons).forEach(id => {
+                const button = document.getElementById(id);
+                if (button) button.addEventListener('click', buttons[id]);
+                else showNotification(`UI error: ${id} missing`, 'error');
+            });
+            ['chatInput', 'keywordInput'].forEach(id => {
+                const input = document.getElementById(id);
+                if (input) input.addEventListener('keypress', (event) => {
+                    if (event.key === 'Enter') {
+                        if (id === 'chatInput') sendQuery(event);
+                        else sendKeywordQuery(event);
+                    }
+                });
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.ctrlKey && event.key === ' ') {
+                    event.preventDefault();
+                    toggleRecording(event);
+                }
+            });
+            showNotification('Welcome! Press Ctrl+Space to record.', 'success');
+        });
+    </script>
+</body>
+</html>
