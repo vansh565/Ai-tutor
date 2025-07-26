@@ -1,4 +1,8 @@
 services:
+build:
+  environment:
+    pythonVersion: 3.11
+
   - type: web
     name: ai-lecture-assistant
     env: python
