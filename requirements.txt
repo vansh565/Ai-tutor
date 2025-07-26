@@ -1,0 +1,35 @@
+flask
+gunicorn
+websockets
+flask-cors
+openai
+google-cloud-speech
+pyaudio
+requests
+# Google Gemini (Generative AI)
+google-generativeai==0.4.1
+
+# Flask and backend server tools
+flask==3.0.3
+flask-cors==4.0.0
+gunicorn==21.2.0
+
+# WebSocket support
+websockets==12.0
+
+# Speech recognition
+SpeechRecognition==3.10.1
+pyaudio==0.2.13
+google-cloud-speech==2.26.0
+
+# Data handling
+pandas==2.2.2
+
+# OpenAI (if used alongside Gemini)
+openai==1.30.1
+
+# For making HTTP requests
+requests==2.32.3
+
+# Optional helper for installing PyAudio on Windows
+pipwin==0.5.1
