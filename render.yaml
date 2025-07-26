@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: ai-lecture-assistant
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: path_to_your_google_credentials.json
