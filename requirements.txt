@@ -24,6 +24,6 @@ requests==2.32.3
 # Data processing
 pandas==2.2.2
 
-# Optional: only if you need PyAudio for microphone input (mostly local dev)
+# Optional (for local dev only)
 # pyaudio==0.2.13
 # pipwin==0.5.1
